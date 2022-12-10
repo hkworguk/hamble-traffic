@@ -2,11 +2,29 @@ import pandas as pd
 import json
 import requests
 
+class DataStore(object):
+
+    def __init__(self, path, date):
+        
+        self._df = None
+
+        # If the file exists then load it
+        # file format data/2022-12-01.csv
+
+        # else create a new one
+
+    def add_rows(self, df):
+        pass
+
+
 class JourneyTime(object):
 
-    def __init__(self, origin, destination):
+    BASE_URL = f'https://maps.googleapis.com/maps/api/distancematrix/json?'
+
+    def __init__(self, origin, destination, key):
         self._origin = origin
         self._destination = destination
+        self._key = key
 
     def run_queries(self):
         modes = ['driving', 'cycling']
@@ -16,28 +34,37 @@ class JourneyTime(object):
 
     def query(self, mode):
 
-        orig_pos = self._origin['lat'], self._origin['long']
-        dest_pos = self._destination['lat'], self._destination['long']
+        orig_pos = f'{self._origin["lat"]}, {self._origin["long"]}'
+        dest_pos = f'{self._destination["lat"]}, {self._destination["long"]}'
+        
+        query_url = f'{JourneyTime.BASE_URL}key={self._key}&origins={orig_pos}&destinations={dest_pos}&mode={mode}&language=en-EN&sensor=false'
 
-        base_url = f'https://maps.googleapis.com/maps/api/distanceMatrix/json?'
-        query_url = f'{base_url}origins={orig_pos}&destinations={dest_pos}&mode={mode}&language=en-EN&sensor=false'
-        # https://maps.googleapis.com/maps/api/distancematrix/json?origins=(1, 1)                  &destinations=(1, 1)                  &mode=driving&language=en-EN&sensor=false
-        # https://maps.googleapis.com/maps/api/distanceMatrix/json?origins=(50.8987019, -1.3112051)&destinations=(50.8975905, -1.3148369)&mode=driving&language=en-EN&sensor=false
-        print(query_url)
         result = requests.get(query_url)
 
-        print(result)
-        journey_time = result['rows'][0]['elements'][0]['duration']['value']
+        if result.status_code == 200:
+            # {
+            #   'destination_addresses': ['Address 1'], 
+            #   'origin_addresses': ['Address 2'], 
+            #   'rows': [
+            #       {'elements': [{
+            #           'distance': {'text': '1.3 km', 'value': 1349}, 
+            #           'duration': {'text': '2 mins', 'value': 141}, 'status': 'OK'}
+            #       ]}], 
+            #   'status': 'OK'}
 
-        print(journey_time)
+            print(result.json())
 
+            journey_time = result.json()['rows'][0]['elements'][0]['duration']['value']
+            
+            # Extract the distance to see if it's non-standard route
+            print(journey_time)
 
 def main():
 
     hamble = {
         'name': 'Hamble',
-        'lat': 50.8987019,
-        'long': -1.3112051
+        'lat': 50.8599421,
+        'long': -1.3413876
     }
 
     windhover = {
@@ -46,7 +73,10 @@ def main():
         'long': -1.3148369
     }
 
-    jt = JourneyTime(hamble, windhover)
+    file_handle = open('../api.key','r')
+    api_key = file_handle.read()
+
+    jt = JourneyTime(hamble, windhover, api_key)
 
     jt.run_queries()
 
