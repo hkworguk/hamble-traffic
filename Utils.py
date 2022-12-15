@@ -1,20 +1,41 @@
 import pandas as pd
-import json
+from pathlib import Path
 import requests
+from datetime import datetime
 
-class DataStore(object):
+class DailyReports(object):
 
-    def __init__(self, path, date):
+    def __init__(self, root_dir_path):
         
         self._df = None
 
-        # If the file exists then load it
-        # file format data/2022-12-01.csv
+        time_stamp = datetime.today()
 
-        # else create a new one
+        self._date = time_stamp.strftime('%Y-%m-%d')
+        self._year = time_stamp.strftime('%Y')
+        self._month = time_stamp.strftime("%b")
 
-    def add_rows(self, df):
-        pass
+        self._file_name = f'{self._date}.csv'
+        
+        self._file_handle = Path(root_dir_path, self._year, self._month, self._file_name)
+        self._file_handle.parent.mkdir(exist_ok=True, parents=True)
+
+        # Load it into a pandas dataframe
+        if Path.exists(self._file_handle):
+            print("Loading existing")
+            self._df = pd.read_csv(self._file_handle)
+        else:
+            print("Creating new")
+            self._df = pd.DataFrame()
+
+    def add_readings(self, *args):
+        # Append the df to the main data frame
+        for df in args:
+            self._df = pd.concat([self._df, df])
+
+    def finalise(self):
+        print(self._df.head())
+        self._df.to_csv(self._file_handle, encoding='utf-8')
 
 
 class JourneyTime(object):
@@ -27,10 +48,11 @@ class JourneyTime(object):
         self._key = key
 
     def run_queries(self):
-        modes = ['driving', 'cycling']
-
+        modes = ['driving', 'bicycling']
+        ret_val = pd.DataFrame()
         for mode in modes:
-            self.query(mode)
+            ret_val = pd.concat([ret_val, self.query(mode)])
+        return ret_val
 
     def query(self, mode):
 
@@ -52,12 +74,28 @@ class JourneyTime(object):
             #       ]}], 
             #   'status': 'OK'}
 
-            print(result.json())
+            journey = result.json()
 
-            journey_time = result.json()['rows'][0]['elements'][0]['duration']['value']
-            
-            # Extract the distance to see if it's non-standard route
-            print(journey_time)
+            # Store the SI units
+            #   distance = m
+            #   duration = s
+            data = {
+                'timestamp':           pd.to_datetime('now', utc=True).replace(microsecond=0),
+                'origin_address':      journey['origin_addresses'][0],
+                'destination_address': journey['destination_addresses'][0],
+                'origin_lat':          self._origin["lat"],
+                'orign_long':          self._origin["long"],
+                'destination_lat':     self._destination["lat"],
+                'destination_long':    self._destination["lat"],
+                'distance':            journey['rows'][0]['elements'][0]['distance']['value'],
+                'duration':            journey['rows'][0]['elements'][0]['duration']['value'],
+                'mode':                mode
+            }
+
+            df = pd.DataFrame(data, index=[0]) 
+            # print(df)
+            return df
+
 
 def main():
 
@@ -76,9 +114,14 @@ def main():
     file_handle = open('../api.key','r')
     api_key = file_handle.read()
 
-    jt = JourneyTime(hamble, windhover, api_key)
+    dr = DailyReports('data/') # lazy
 
-    jt.run_queries()
+    jt1 = JourneyTime(hamble, windhover, api_key)
+    jt2 = JourneyTime(windhover, hamble, api_key)
+
+    dr.add_readings(jt1.run_queries(), jt2.run_queries())
+
+    dr.finalise()
 
 if __name__ == '__main__':
     main()
