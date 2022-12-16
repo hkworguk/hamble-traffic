@@ -1,5 +1,0 @@
-,timestamp,origin_address,destination_address,origin_lat,orign_long,destination_lat,destination_long,distance,duration,mode
-0,2022-12-15 19:47:26+00:00,"29-21 Westfield Common, Hamble-le-Rice, Southampton SO31 4LB, UK","Bert Betts Way, Southampton SO31, UK",50.8599421,-1.3413876,50.8975905,50.8975905,5606,626,driving
-0,2022-12-15 19:47:26+00:00,"29-21 Westfield Common, Hamble-le-Rice, Southampton SO31 4LB, UK","Bert Betts Way, Southampton SO31, UK",50.8599421,-1.3413876,50.8975905,50.8975905,5870,1313,bicycling
-0,2022-12-15 19:47:26+00:00,"Bert Betts Way, Southampton SO31, UK","29-21 Westfield Common, Hamble-le-Rice, Southampton SO31 4LB, UK",50.8975905,-1.3148369,50.8599421,50.8599421,6234,653,driving
-0,2022-12-15 19:47:26+00:00,"Bert Betts Way, Southampton SO31, UK","29-21 Westfield Common, Hamble-le-Rice, Southampton SO31 4LB, UK",50.8975905,-1.3148369,50.8599421,50.8599421,5579,1154,bicycling
