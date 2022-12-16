@@ -15,7 +15,7 @@ class DailyReports(object):
         self._year = time_stamp.strftime('%Y')
         self._month = time_stamp.strftime("%b")
 
-        self._file_name = f'{self._date}.csv'
+        self._file_name = f'{self._date}.csv.gz'
         
         self._file_handle = Path(root_dir_path, self._year, self._month, self._file_name)
         self._file_handle.parent.mkdir(exist_ok=True, parents=True)
@@ -31,11 +31,12 @@ class DailyReports(object):
     def add_readings(self, *args):
         # Append the df to the main data frame
         for df in args:
-            self._df = pd.concat([self._df, df])
+            #print(df.head())
+            self._df = pd.concat([self._df, df], axis=0)
 
     def finalise(self):
-        print(self._df.head())
-        self._df.to_csv(self._file_handle, encoding='utf-8')
+        #print(self._df.head())
+        self._df.to_csv(self._file_handle, encoding='utf-8', index=False, compression="gzip")
 
 
 class JourneyTime(object):
@@ -51,7 +52,7 @@ class JourneyTime(object):
         modes = ['driving', 'bicycling']
         ret_val = pd.DataFrame()
         for mode in modes:
-            ret_val = pd.concat([ret_val, self.query(mode)])
+            ret_val = pd.concat([ret_val, self.query(mode)], axis=0)
         return ret_val
 
     def query(self, mode):
@@ -119,9 +120,10 @@ def main():
     jt1 = JourneyTime(hamble, windhover, api_key)
     jt2 = JourneyTime(windhover, hamble, api_key)
 
+    print(f'Runing query - {datetime.now()}')
     dr.add_readings(jt1.run_queries(), jt2.run_queries())
-
     dr.finalise()
+    print('Query complete')
 
 if __name__ == '__main__':
     main()
