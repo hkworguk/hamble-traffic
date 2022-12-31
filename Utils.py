@@ -38,6 +38,21 @@ class DailyReports(object):
         #print(self._df.head())
         self._df.to_csv(self._file_handle, encoding='utf-8', index=False, compression="gzip")
 
+    # Adds in short origin and destination if it does not exist
+    @staticmethod
+    def refactor_origin_destination(root_dir):
+        
+        for path in Path(root_dir).rglob('*.csv.gz'):
+            print(path)
+            df = pd.read_csv(path)
+            
+            df.loc[df['origin_address'].str.contains("Bert"),'origin'] = 'Windhover'
+            df.loc[df['origin_address'].str.contains("Hamble"),'origin'] = 'Hamble'
+            df.loc[df['destination_address'].str.contains("Bert"),'destination'] = 'Windhover'
+            df.loc[df['destination_address'].str.contains("Hamble"),'destination'] = 'Hamble'
+
+            df.to_csv(path, encoding='utf-8', index=False)#, compression="gzip")
+
 
 class JourneyTime(object):
 
@@ -82,6 +97,8 @@ class JourneyTime(object):
             #   duration = s
             data = {
                 'timestamp':           pd.to_datetime('now', utc=True).replace(microsecond=0),
+                'origin':              self._origin['name'],
+                'destination':         self._destination['name'],
                 'origin_address':      journey['origin_addresses'][0],
                 'destination_address': journey['destination_addresses'][0],
                 'origin_lat':          self._origin["lat"],
@@ -98,7 +115,10 @@ class JourneyTime(object):
             return df
 
 
-def main():
+def refactor():
+    DailyReports.refactor_origin_destination('data/')
+
+def run_query():
 
     hamble = {
         'name': 'Hamble',
@@ -124,6 +144,11 @@ def main():
     dr.add_readings(jt1.run_queries(), jt2.run_queries())
     dr.finalise()
     print('Query complete')
+
+def main():
+    # TODO: Add argparse
+    run_query()
+    #refactor()
 
 if __name__ == '__main__':
     main()
