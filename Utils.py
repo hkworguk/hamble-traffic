@@ -64,7 +64,7 @@ class JourneyTime(object):
         self._key = key
 
     def run_queries(self):
-        modes = ['driving', 'bicycling']
+        modes = ['driving']
         ret_val = pd.DataFrame()
         for mode in modes:
             ret_val = pd.concat([ret_val, self.query(mode)], axis=0)
@@ -75,7 +75,7 @@ class JourneyTime(object):
         orig_pos = f'{self._origin["lat"]}, {self._origin["long"]}'
         dest_pos = f'{self._destination["lat"]}, {self._destination["long"]}'
         
-        query_url = f'{JourneyTime.BASE_URL}key={self._key}&origins={orig_pos}&destinations={dest_pos}&mode={mode}&language=en-EN&sensor=false'
+        query_url = f'{JourneyTime.BASE_URL}origins={orig_pos}&destinations={dest_pos}&departure_time=now&key={self._key}&mode={mode}&language=en-EN'
 
         result = requests.get(query_url)
 
@@ -86,12 +86,14 @@ class JourneyTime(object):
             #   'rows': [
             #       {'elements': [{
             #           'distance': {'text': '1.3 km', 'value': 1349}, 
-            #           'duration': {'text': '2 mins', 'value': 141}, 'status': 'OK'}
+            #           'duration': {'text': '2 mins', 'value': 141},
+            #           'duration_in_traffic': {'text': '10 mins', 'value': 586},
+            #           'status': 'OK'}
             #       ]}], 
             #   'status': 'OK'}
 
             journey = result.json()
-
+            # print(journey)
             # Store the SI units
             #   distance = m
             #   duration = s
@@ -106,7 +108,7 @@ class JourneyTime(object):
                 'destination_lat':     self._destination["lat"],
                 'destination_long':    self._destination["lat"],
                 'distance':            journey['rows'][0]['elements'][0]['distance']['value'],
-                'duration':            journey['rows'][0]['elements'][0]['duration']['value'],
+                'duration':            journey['rows'][0]['elements'][0]['duration_in_traffic']['value'],
                 'mode':                mode
             }
 
