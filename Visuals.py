@@ -19,7 +19,7 @@ def create_month_summaries(dir):
             summary_name = f'{root}-summary.csv.gz'
             print(f'{root} is a leaf')
             print(date.date().strftime("%b"))
-            
+
             # If it's the current month then update the extant summary
             if summary_name in files and date.date().strftime("%b") is root:
                 print("Updating summary")
@@ -39,9 +39,26 @@ def create_year_summaries(dir):
 def create_overall_summary():
     pass
 
+def create_daily_charts(dir):
+
+    for file in Path(dir).rglob('*.csv.gz'):
+
+        date = datetime.strptime(os.path.basename(file).split('.')[0], '%Y-%m-%d')
+        year = date.strftime('%Y')
+        month = date.strftime('%b')
+
+        fig_file_name = f'{str(date.date())}-ts.jpg'
+
+        file_handle = Path('graphs/', year, month, fig_file_name)
+        file_handle.parent.mkdir(exist_ok=True, parents=True)
+
+        if not os.path.isfile(file_handle) or (os.path.isfile(file_handle) and datetime.now().date() == date.date()):
+            render_time_series_chart(file, file_handle)
+        #else:
+        #    print(f"Fig exists, skipping {file_handle}")
 
 # Creates a chart from agiven df and saves the rendering of it
-def render_time_series_chart(file_name):
+def render_time_series_chart(file_name, fig_file_handle):
     
     df = pd.read_csv(file_name)
 
@@ -73,15 +90,15 @@ def render_time_series_chart(file_name):
     plt.plot(w2h['duration_mins'], linestyle="-", color="blue", label=f'{w2h_label} actuals')
 
     # Daily average
-    plt.axhline(y=6, linestyle=":", color='red', label=f'i-Transport reported average') # Cemex/i-Transport average
+    # Cemex/i-Transport average based on 34mph average speed on Hamble lane...?
+    # Google api/distanceMatrix has distance 5606m duration 626s = 8.955 m/s = 20mph without traffic
+    plt.axhline(y=6, linestyle=":", color='red', label=f'i-Transport reported average') 
     plt.axhline(y=h2w['duration_mins'].mean(), linestyle=':', color='green', label=f'{h2w_label} full day average')
     plt.axhline(y=w2h['duration_mins'].mean(), linestyle=':', color='blue', label=f'{w2h_label} full day average')
 
-    # Actual avarages when most people are out and about
-    #time_range = pd.date_range('06:00:00', '22:00:00', freq='H')
+    # Actual avarages when most people are out and about and observe delays
     start_time = '06:00:00'
     end_time = '19:00:00'
-    #print(h2w.set_index('timestamp').between_time(start_time, end_time).mean()['duration_mins'])
 
     plt.axhline(
         y=h2w.between_time(start_time, end_time).mean()['duration_mins'], 
@@ -99,24 +116,18 @@ def render_time_series_chart(file_name):
     plt.legend(facecolor='lightgrey', framealpha=1)
     plt.gca().set_ylim(ymin=0)
 
-    # Save it to the figure
-    # Get the date parts to save it
-    # TODO: Check this work for summaries
-    date = datetime.strptime(os.path.basename(file_name).split('.')[0], '%Y-%m-%d')
-    year = date.strftime('%Y')
-    month = date.strftime('%b')
-    file_name = f'{str(date.date())}-ts.jpg'
-
-    file_handle = Path('graphs/', year, month, file_name)
-    file_handle.parent.mkdir(exist_ok=True, parents=True)
-
-    plt.savefig(file_handle, bbox_inches='tight', dpi=150)
+    plt.savefig(fig_file_handle, bbox_inches='tight', dpi=150)
     #plt.show()
 
 def main():
 
-    create_month_summaries('data/')
-    create_year_summaries('data/')
+    DATA_DIR = 'data/'
+    #create_month_summaries(DATA_DIR)
+    #create_year_summaries(DATA_DIR)
+    
+    print('Generating Visuals')
+    create_daily_charts(DATA_DIR)
+    print('Visual Generation Complete')
 
 if __name__ == '__main__':
     main()
