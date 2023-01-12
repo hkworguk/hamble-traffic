@@ -42,7 +42,7 @@ def create_daily_charts(dir):
 
     for df_file in Path(dir).rglob('*.csv.gz'):
         render_time_series_chart(df_file,  'Hamble', 'Windhover', [('06:00:00', '19:00:00')])
-        render_time_series_chart(df_file,  'Hound', 'Mallards', [('07:00:00', '09:00:00'), ('02:00:00', '04:00:00')])
+        render_time_series_chart(df_file,  'Hound', 'Mallards', [('07:00:00', '09:00:00'), ('14:00:00', '16:00:00')])
 
 # Creates a chart from agiven df and saves the rendering of it
 def render_time_series_chart(df_file_name, origin, dest, time_groups=None):
