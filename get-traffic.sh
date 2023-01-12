@@ -7,5 +7,6 @@ do
   git add graphs/
   git commit -m "Auto backup"
   git push
+  echo "Sleeping for a bit..."
   sleep 299
 done
