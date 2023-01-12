@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter
 from datetime import datetime
 from pathlib import Path
-
+import statistics
 
 # creates a monthly summary
 def create_month_summaries(dir):
@@ -41,11 +41,11 @@ def create_overall_summary():
 def create_daily_charts(dir):
 
     for df_file in Path(dir).rglob('*.csv.gz'):
-        render_time_series_chart(df_file,  'Hamble', 'Windhover', 6, [('06:00:00', '19:00:00')])
-        render_time_series_chart(df_file,  'Hound', 'Mallards', 0.8, [('07:00:00', '09:00:00'), ('02:00:00', '04:00:00')])
+        render_time_series_chart(df_file,  'Hamble', 'Windhover', [('06:00:00', '19:00:00')])
+        render_time_series_chart(df_file,  'Hound', 'Mallards', [('07:00:00', '09:00:00'), ('02:00:00', '04:00:00')])
 
 # Creates a chart from agiven df and saves the rendering of it
-def render_time_series_chart(df_file_name, origin, dest, report_average, time_groups=None):
+def render_time_series_chart(df_file_name, origin, dest, time_groups=None):
     
     date = datetime.strptime(os.path.basename(df_file_name).split('.')[0], '%Y-%m-%d')
 
@@ -71,7 +71,7 @@ def render_time_series_chart(df_file_name, origin, dest, report_average, time_gr
         df.drop(['origin_address', 'destination_address'], axis=1, inplace=True)
         df.drop(['origin_lat', 'orign_long'], axis=1, inplace=True)
         df.drop(['destination_lat', 'destination_long'], axis=1, inplace=True)
-        df.drop(['duration', 'distance'], axis=1, inplace=True)
+        #df.drop(['duration', 'distance'], axis=1, inplace=True)
         #df.set_index('timestamp', inplace=True)
 
         # Create frames for each journey type
@@ -94,8 +94,14 @@ def render_time_series_chart(df_file_name, origin, dest, report_average, time_gr
 
         # Daily average
         # Cemex/i-Transport average based on 34mph average speed on Hamble lane...?
-        # Google api/distanceMatrix has distance 5606m duration 626s = 8.955 m/s = 20mph without traffic
-        plt.axhline(y=report_average, linestyle="dotted", color='red', label=f'Cemex/i-Transport reported average') 
+        # Google api/distanceMatrix distance average by Cemex speed average 34mph
+        REPORTED_MEAN_SPEED = 15.1994 # m/s
+
+        report_average_mins = (statistics.fmean([o2d['distance'].mean(), d2o['distance'].mean()])/REPORTED_MEAN_SPEED) / 60.0
+ 
+        #print(report_average_mins)
+
+        plt.axhline(y=report_average_mins, linestyle="dotted", color='red', label=f'Cemex/i-Transport reported average') 
         plt.axhline(y=o2d['duration_mins'].mean(), linestyle='dotted', color='green', label=f'{o2d_label} full day average')
         plt.axhline(y=d2o['duration_mins'].mean(), linestyle='dotted', color='blue', label=f'{d20_label} full day average')
 
@@ -107,11 +113,11 @@ def render_time_series_chart(df_file_name, origin, dest, report_average, time_gr
             if start_time is not None and end_time is not None:
                 plt.axhline(
                     y=o2d.between_time(start_time, end_time).mean(numeric_only=True)['duration_mins'], 
-                    linestyle=line_styles[index], color="green", label=f'{o2d_label} average between {start_time} and {end_time}')
+                    linestyle=line_styles[index], color="green", label=f'{o2d_label} average {start_time} and {end_time}')
 
                 plt.axhline(
                     y=d2o.between_time(start_time, end_time).mean(numeric_only=True)['duration_mins'], 
-                    linestyle=line_styles[index], color="blue", label=f'{d20_label} average between {start_time} and {end_time}')
+                    linestyle=line_styles[index], color="blue", label=f'{d20_label} average {start_time} and {end_time}')
         
         plt.title(f'Journey times beteen {origin} and {dest} for {date.date()}')
         plt.xlabel('Time')
