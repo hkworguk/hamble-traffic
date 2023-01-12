@@ -29,9 +29,8 @@ def create_month_summaries(dir):
 
     # else create one for where we are now
 
-
+# Average of all monthly summaries
 def create_year_summaries(dir):
-    # Average of all monthly summaries
     pass
 
 
@@ -41,83 +40,89 @@ def create_overall_summary():
 
 def create_daily_charts(dir):
 
-    for file in Path(dir).rglob('*.csv.gz'):
-
-        date = datetime.strptime(os.path.basename(file).split('.')[0], '%Y-%m-%d')
-        year = date.strftime('%Y')
-        month = date.strftime('%b')
-
-        fig_file_name = f'{str(date.date())}-ts.jpg'
-
-        file_handle = Path('graphs/', year, month, fig_file_name)
-        file_handle.parent.mkdir(exist_ok=True, parents=True)
-
-        if not os.path.isfile(file_handle) or (os.path.isfile(file_handle) and datetime.now().date() == date.date()):
-            render_time_series_chart(file, file_handle)
-        #else:
-        #    print(f"Fig exists, skipping {file_handle}")
+    for df_file in Path(dir).rglob('*.csv.gz'):
+        render_time_series_chart(df_file,  'Hamble', 'Windhover', 6, [('06:00:00', '19:00:00')])
+        render_time_series_chart(df_file,  'Hound', 'Mallards', 0.8, [('07:00:00', '09:00:00'), ('02:00:00', '04:00:00')])
 
 # Creates a chart from agiven df and saves the rendering of it
-def render_time_series_chart(file_name, fig_file_handle):
+def render_time_series_chart(df_file_name, origin, dest, report_average, time_groups=None):
     
-    df = pd.read_csv(file_name)
+    date = datetime.strptime(os.path.basename(df_file_name).split('.')[0], '%Y-%m-%d')
 
-    # Add a new column for journey time in minutes
-    df['duration_mins'] = df['duration']/60
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
-    #df['timestamp'] = df['timestamp'].apply( lambda t : t.time())
+    fig_name = f'{origin}-{dest}-{str(date.date())}-ts.jpg'
 
-    df.drop(['origin_address', 'destination_address'], axis=1, inplace=True)
-    df.drop(['origin_lat', 'orign_long'], axis=1, inplace=True)
-    df.drop(['destination_lat', 'destination_long'], axis=1, inplace=True)
-    df.drop(['duration', 'distance'], axis=1, inplace=True)
-    #df.set_index('timestamp', inplace=True)
-
-    # Create frames for each journey type
-    h2w = df.loc[(df['origin'] == 'Hamble') & (df['mode'] == 'driving')]
-    w2h = df.loc[(df['origin'] == 'Windhover') & (df['mode'] == 'driving')]
-
-    h2w.set_index('timestamp', inplace=True)
-    w2h.set_index('timestamp', inplace=True)
-
-    plt.figure(figsize=[16,7])
-    plt.gca().xaxis.set_major_formatter(DateFormatter('%H:%M'))
-
-    h2w_label = "Hamble to Windhover"
-    w2h_label = "Windhover to Hamble"
-
-    plt.plot(h2w['duration_mins'], linestyle="-", color="green", label=f'{h2w_label} actuals')
-    plt.plot(w2h['duration_mins'], linestyle="-", color="blue", label=f'{w2h_label} actuals')
-
-    # Daily average
-    # Cemex/i-Transport average based on 34mph average speed on Hamble lane...?
-    # Google api/distanceMatrix has distance 5606m duration 626s = 8.955 m/s = 20mph without traffic
-    plt.axhline(y=6, linestyle=":", color='red', label=f'i-Transport reported average') 
-    plt.axhline(y=h2w['duration_mins'].mean(), linestyle=':', color='green', label=f'{h2w_label} full day average')
-    plt.axhline(y=w2h['duration_mins'].mean(), linestyle=':', color='blue', label=f'{w2h_label} full day average')
-
-    # Actual avarages when most people are out and about and observe delays
-    start_time = '06:00:00'
-    end_time = '19:00:00'
-
-    plt.axhline(
-        y=h2w.between_time(start_time, end_time).mean()['duration_mins'], 
-        linestyle="-.", color="green", label=f'{h2w_label} observed average')
-
-    plt.axhline(
-        y=w2h.between_time(start_time, end_time).mean()['duration_mins'], 
-        linestyle="-.", color="blue", label=f'{w2h_label} observed average')
+    year = date.strftime('%Y')
+    month = date.strftime('%b')
     
-    plt.title(f'Journey times beteen {df["origin"].unique()[0]} and {df["origin"].unique()[1]} for {os.path.basename(file_name).split(".")[0]}')
-    plt.xlabel('Time')
-    plt.ylabel('Duration (minutes)')
-    plt.legend()
-    plt.grid()
-    plt.legend(facecolor='lightgrey', framealpha=1)
-    plt.gca().set_ylim(ymin=0)
+    fig_file_handle = Path('graphs/', year, month, fig_name)
+    fig_file_handle.parent.mkdir(exist_ok=True, parents=True)
+    
+    if not os.path.isfile(fig_file_handle) or (os.path.isfile(fig_file_handle) and datetime.now().date() == date.date()):
+        
+        df = pd.read_csv(df_file_name)
 
-    plt.savefig(fig_file_handle, bbox_inches='tight', dpi=150)
-    #plt.show()
+        # Add a new column for journey time in minutes
+        df['duration_mins'] = df['duration']/60
+        # Add in speed/velocity
+        df['speed'] = df['distance']/df['duration']
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        #df['timestamp'] = df['timestamp'].apply( lambda t : t.time())
+
+        df.drop(['origin_address', 'destination_address'], axis=1, inplace=True)
+        df.drop(['origin_lat', 'orign_long'], axis=1, inplace=True)
+        df.drop(['destination_lat', 'destination_long'], axis=1, inplace=True)
+        df.drop(['duration', 'distance'], axis=1, inplace=True)
+        #df.set_index('timestamp', inplace=True)
+
+        # Create frames for each journey type
+        o2d = df.loc[(df['origin'] == origin) & (df['mode'] == 'driving')]
+        d2o = df.loc[(df['origin'] == dest) & (df['mode'] == 'driving')]
+
+        if len(o2d.index) == 0 or len(d2o.index) == 0: return
+
+        o2d.set_index('timestamp', inplace=True)
+        d2o.set_index('timestamp', inplace=True)
+
+        plt.figure(figsize=[16,7])
+        plt.gca().xaxis.set_major_formatter(DateFormatter('%H:%M'))
+
+        o2d_label = f"{origin} to {dest}"
+        d20_label = f"{dest} to {origin}"
+
+        plt.plot(o2d['duration_mins'], linestyle='solid', color="green", label=f'{o2d_label} actuals')
+        plt.plot(d2o['duration_mins'], linestyle='solid', color="blue", label=f'{d20_label} actuals')
+
+        # Daily average
+        # Cemex/i-Transport average based on 34mph average speed on Hamble lane...?
+        # Google api/distanceMatrix has distance 5606m duration 626s = 8.955 m/s = 20mph without traffic
+        plt.axhline(y=report_average, linestyle="dotted", color='red', label=f'Cemex/i-Transport reported average') 
+        plt.axhline(y=o2d['duration_mins'].mean(), linestyle='dotted', color='green', label=f'{o2d_label} full day average')
+        plt.axhline(y=d2o['duration_mins'].mean(), linestyle='dotted', color='blue', label=f'{d20_label} full day average')
+
+        # Actual avarages when most people are out and about and observe delays
+        line_styles = ['dashed', 'dashdot']
+        # TODO: Add on average speeds m/s to mph
+
+        for index, (start_time, end_time) in enumerate(time_groups):
+            if start_time is not None and end_time is not None:
+                plt.axhline(
+                    y=o2d.between_time(start_time, end_time).mean(numeric_only=True)['duration_mins'], 
+                    linestyle=line_styles[index], color="green", label=f'{o2d_label} average between {start_time} and {end_time}')
+
+                plt.axhline(
+                    y=d2o.between_time(start_time, end_time).mean(numeric_only=True)['duration_mins'], 
+                    linestyle=line_styles[index], color="blue", label=f'{d20_label} average between {start_time} and {end_time}')
+        
+        plt.title(f'Journey times beteen {origin} and {dest} for {date.date()}')
+        plt.xlabel('Time')
+        plt.ylabel('Duration (minutes)')
+        plt.legend()
+        plt.grid()
+        plt.legend(facecolor='lightgrey', framealpha=1)
+        plt.gca().set_ylim(ymin=0)
+
+        plt.savefig(fig_file_handle, bbox_inches='tight', dpi=150)
+        #plt.show()
 
 def main():
 
