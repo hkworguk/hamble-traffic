@@ -122,30 +122,33 @@ def refactor():
 
 def run_query():
 
-    hamble = {
-        'name': 'Hamble',
-        'lat': 50.8599421,
-        'long': -1.3413876
-    }
-
-    windhover = {
-        'name': 'Windhover',
-        'lat': 50.8975905,
-        'long': -1.3148369
-    }
+    journeys = [
+        (
+            {'name': 'Hamble', 'lat': 50.8599421, 'long': -1.3413876},
+            {'name': 'Windhover','lat': 50.8975905, 'long': -1.3148369}
+        ),
+        (
+            {'name': 'Hound','lat': 50.8762178,'long': -1.328644},
+            {'name': 'Mallards', 'lat': 50.8826763, 'long': -1.325972,}
+        )
+    ]
 
     file_handle = open('../api.key','r')
     api_key = file_handle.read()
 
     dr = DailyReports('data/') # lazy
 
-    jt1 = JourneyTime(hamble, windhover, api_key)
-    jt2 = JourneyTime(windhover, hamble, api_key)
+    print(f'Runing Queries')
 
-    print(f'Runing query - {datetime.now()}')
-    dr.add_readings(jt1.run_queries(), jt2.run_queries())
-    dr.finalise()
-    print('Query complete')
+    for _ , (x, y) in enumerate(journeys):
+        jt1 = JourneyTime(x, y, api_key)
+        jt2 = JourneyTime(y, x, api_key)
+
+        print(f'Runing query - {x["name"]} to/from {y["name"]} {datetime.now()}')
+        dr.add_readings(jt1.run_queries(), jt2.run_queries())
+        dr.finalise()
+
+    print('Queries complete')
 
 def main():
     # TODO: Add argparse
