@@ -61,11 +61,11 @@ def render_time_series_chart(df_file_name, origin, dest, measure_and_unit='durat
     date = datetime.strptime(os.path.basename(df_file_name).split('.')[0], '%Y-%m-%d')
     measure = measure_and_unit.split('_')[0]
     unit = measure_and_unit.split('_')[1]
-    fig_name = f'{str(date.date())}-{origin}-{dest}-{measure}-ts.jpg'
+    fig_name = f'{str(date.date())}-{origin.lower()}-{dest.lower()}-{measure.lower()}-ts.jpg'
     year = date.strftime('%Y')
     month = date.strftime('%b')
     
-    fig_file_handle = Path('graphs/', year, month, fig_name)
+    fig_file_handle = Path(f'graphs/', year, month, measure, fig_name)
     fig_file_handle.parent.mkdir(exist_ok=True, parents=True)
     
     if not os.path.isfile(fig_file_handle) or (os.path.isfile(fig_file_handle) and datetime.now().date() == date.date()):
@@ -90,7 +90,8 @@ def render_time_series_chart(df_file_name, origin, dest, measure_and_unit='durat
         o2d = df.loc[(df['origin'] == origin) & (df['mode'] == 'driving')]
         d2o = df.loc[(df['origin'] == dest) & (df['mode'] == 'driving')]
 
-        if len(o2d.index) == 0 or len(d2o.index) == 0: return
+        if len(o2d.index) == 0 or len(d2o.index) == 0: 
+            return
 
         o2d.set_index('timestamp', inplace=True)
         d2o.set_index('timestamp', inplace=True)
@@ -98,8 +99,8 @@ def render_time_series_chart(df_file_name, origin, dest, measure_and_unit='durat
         plt.figure(figsize=[16,7])
         plt.gca().xaxis.set_major_formatter(DateFormatter('%H:%M'))
 
-        o2d_label = f"{origin} to {dest}"
-        d20_label = f"{dest} to {origin}"
+        o2d_label = f"{origin.capitalize()} to {dest.capitalize()}"
+        d20_label = f"{dest.capitalize()} to {origin.capitalize()}"
 
         plt.plot(o2d[measure_and_unit], linestyle='solid', color="green", label=f'{o2d_label} actuals')
         plt.plot(d2o[measure_and_unit], linestyle='solid', color="blue", label=f'{d20_label} actuals')
@@ -128,9 +129,9 @@ def render_time_series_chart(df_file_name, origin, dest, measure_and_unit='durat
                     y=d2o.between_time(start_time, end_time).mean(numeric_only=True)[measure_and_unit], 
                     linestyle=line_styles[index], color="blue", label=f'{d20_label} average {start_time} and {end_time}')
         
-        plt.title(f'Journey {measure} beteen {origin} and {dest} for {date.date()}')
+        plt.title(f'Journey {measure} between {origin.capitalize()} and {dest.capitalize()} for {date.date()}')
         plt.xlabel('Time')
-        plt.ylabel(f'{measure}  ({unit})')
+        plt.ylabel(f'{measure.capitalize()}  ({unit.capitalize()})')
         plt.legend()
         plt.grid()
         plt.legend(facecolor='lightgrey', framealpha=1)
