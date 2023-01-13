@@ -137,9 +137,7 @@ def render_time_series_chart(df_file_name, origin, dest, measure_and_unit='durat
         plt.gca().set_ylim(ymin=0)
         plt.savefig(fig_file_handle, bbox_inches='tight', dpi=150)
         #plt.show()
-
-render_time_series_chart('data/2023/Jan/2023-01-10.csv.gz', 'Hamble', 'Windhover', 'duration_minutes', [('06:00:00', '19:00:00')])
-        #plt.show()
+        
 
 def main():
 
