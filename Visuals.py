@@ -48,7 +48,7 @@ def create_daily_charts(dir):
 
 
 # Creates a chart from agiven df and saves the rendering of it
-def render_time_series_chart(df_file_name, origin, dest, measure_and_unit='duration_minutes', time_groups=None):
+def render_time_series_chart(df_file_name, origin, dest, measure_and_unit='duration_minutes', time_groups=None, force=False):
     
     if measure_and_unit not in ['duration_minutes', 'speed_mph']:
         return
@@ -61,14 +61,14 @@ def render_time_series_chart(df_file_name, origin, dest, measure_and_unit='durat
     date = datetime.strptime(os.path.basename(df_file_name).split('.')[0], '%Y-%m-%d')
     measure = measure_and_unit.split('_')[0]
     unit = measure_and_unit.split('_')[1]
-    fig_name = f'{str(date.date())}-{origin.lower()}-{dest.lower()}-{measure.lower()}-ts.jpg'
+    fig_name = f'{origin}-{dest}-{measure}-{str(date.date())}-ts.jpg'
     year = date.strftime('%Y')
     month = date.strftime('%b')
     
-    fig_file_handle = Path(f'graphs/', year, month, measure, fig_name)
+    fig_file_handle = Path('graphs/', year, month, measure, fig_name)
     fig_file_handle.parent.mkdir(exist_ok=True, parents=True)
     
-    if not os.path.isfile(fig_file_handle) or (os.path.isfile(fig_file_handle) and datetime.now().date() == date.date()):
+    if force or (not os.path.isfile(fig_file_handle) or (os.path.isfile(fig_file_handle) and datetime.now().date() == date.date())):
         
         df = pd.read_csv(df_file_name)
         
@@ -90,8 +90,7 @@ def render_time_series_chart(df_file_name, origin, dest, measure_and_unit='durat
         o2d = df.loc[(df['origin'] == origin) & (df['mode'] == 'driving')]
         d2o = df.loc[(df['origin'] == dest) & (df['mode'] == 'driving')]
 
-        if len(o2d.index) == 0 or len(d2o.index) == 0: 
-            return
+        if len(o2d.index) == 0 or len(d2o.index) == 0: return
 
         o2d.set_index('timestamp', inplace=True)
         d2o.set_index('timestamp', inplace=True)
@@ -99,15 +98,15 @@ def render_time_series_chart(df_file_name, origin, dest, measure_and_unit='durat
         plt.figure(figsize=[16,7])
         plt.gca().xaxis.set_major_formatter(DateFormatter('%H:%M'))
 
-        o2d_label = f"{origin.capitalize()} to {dest.capitalize()}"
-        d20_label = f"{dest.capitalize()} to {origin.capitalize()}"
+        o2d_label = f"{origin} to {dest}"
+        d20_label = f"{dest} to {origin}"
 
         plt.plot(o2d[measure_and_unit], linestyle='solid', color="green", label=f'{o2d_label} actuals')
         plt.plot(d2o[measure_and_unit], linestyle='solid', color="blue", label=f'{d20_label} actuals')
 
         # Daily average
         if measure_and_unit == 'duration_minutes':
-            report_average = (statistics.fmean([o2d[measure_and_unit].mean(), d2o[measure_and_unit].mean()])/REPORTED_MEAN_SPEED)
+            report_average = (statistics.fmean([o2d['distance'].mean(), d2o['distance'].mean()]) / REPORTED_MEAN_SPEED) / 60
         else:
             report_average = REPORTED_MEAN_SPEED * MS_TO_MPH
         #print(report_average_mins)
@@ -129,15 +128,17 @@ def render_time_series_chart(df_file_name, origin, dest, measure_and_unit='durat
                     y=d2o.between_time(start_time, end_time).mean(numeric_only=True)[measure_and_unit], 
                     linestyle=line_styles[index], color="blue", label=f'{d20_label} average {start_time} and {end_time}')
         
-        plt.title(f'Journey {measure} between {origin.capitalize()} and {dest.capitalize()} for {date.date()}')
+        plt.title(f'Journey {measure} beteen {origin} and {dest} for {date.date()}')
         plt.xlabel('Time')
-        plt.ylabel(f'{measure.capitalize()}  ({unit.capitalize()})')
+        plt.ylabel(f'{measure}  ({unit})')
         plt.legend()
         plt.grid()
         plt.legend(facecolor='lightgrey', framealpha=1)
         plt.gca().set_ylim(ymin=0)
-
         plt.savefig(fig_file_handle, bbox_inches='tight', dpi=150)
+        #plt.show()
+
+render_time_series_chart('data/2023/Jan/2023-01-10.csv.gz', 'Hamble', 'Windhover', 'duration_minutes', [('06:00:00', '19:00:00')])
         #plt.show()
 
 def main():
