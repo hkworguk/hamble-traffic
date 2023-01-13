@@ -128,16 +128,16 @@ def render_time_series_chart(df_file_name, origin, dest, measure_and_unit='durat
                     y=d2o.between_time(start_time, end_time).mean(numeric_only=True)[measure_and_unit], 
                     linestyle=line_styles[index], color="blue", label=f'{d20_label} average {start_time} and {end_time}')
         
-        plt.title(f'Journey {measure} beteen {origin} and {dest} for {date.date()}')
+        plt.title(f'Journey {measure} between {origin} and {dest} for {date.date()}')
         plt.xlabel('Time')
-        plt.ylabel(f'{measure}  ({unit})')
+        plt.ylabel(f'{measure.capitalize()}  ({unit.capitalize()})')
         plt.legend()
         plt.grid()
         plt.legend(facecolor='lightgrey', framealpha=1)
         plt.gca().set_ylim(ymin=0)
         plt.savefig(fig_file_handle, bbox_inches='tight', dpi=150)
         #plt.show()
-        
+
 
 def main():
 
