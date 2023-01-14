@@ -1,8 +1,8 @@
 #!/bin/sh  
 while true  
 do  
-  python Utils.py
-  python Visuals.py
+  python utils/Data.py
+  python utils/Graphs.py
   git add data/
   git add graphs/
   git commit -m "Auto backup"
