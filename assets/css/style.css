@@ -69,58 +69,16 @@ img { max-width: 100%; }
     line-height: 36px;
 }
 
-.timer {
-    margin-top: 60px;
-}
-
-.timer .days-wrapper,
-.timer .hours-wrapper,
-.timer .minutes-wrapper,
-.timer .seconds-wrapper {
-    display: inline-block;
-    width: 160px;
-    margin: 0 10px;
-    font-size: 18px;
-    /* border: 1px solid rgba(255, 255, 255, 0.41); */
-    padding: 25px 10px;
-    /* border-style: dashed; */
-    /* background-color: rgba(0, 0, 0, 0.17); */
-    /* border-bottom-color: #F02020; */
-    font-weight: bolder;
-}
-
-.timer .days,
-.timer .hours,
-.timer .minutes,
-.timer .seconds {
-    font-size: 80px;
-    font-weight: 100;
-    line-height: 90px;
-}
-
-.subscribe {
-	margin-top: 60px;
-}
-
-.subscribe form input {
-    width: 362px;
-    height: 52px;
-}
-
-.success-message, .error-message {
-	margin-top: 20px;
-	font-size: 18px;
-    line-height: 32px;
-}
-
-
 /***** Footer *****/
 
 footer {
-	margin-top: 30px;
-	padding: 20px 0 15px 0;
-	background: #3d3d3d;
-	background: rgba(0, 0, 0, 0.3);
+	position: fixed;
+	width: 100%;
+	margin-top: 20px;
+	padding: 10px 0 10px 0;
+	background: #101010;
+	bottom: 0;
+	text-emphasis-style: inherit;
 }
 
 .footer-copyright p {
