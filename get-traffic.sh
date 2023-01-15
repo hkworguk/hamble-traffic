@@ -8,5 +8,5 @@ do
   git commit -m "Auto backup"
   git push
   echo "Sleeping for a bit..."
-  sleep 299
+  sleep 500
 done
